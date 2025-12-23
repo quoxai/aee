@@ -15,9 +15,10 @@
     "title": "AEE Protocol Specification for AI Systems",
     "version": "1",
     "purpose": "Self-contained explanation of AEE for AI agents. This document is itself a valid AEE envelope.",
+    "document_type": "Static reference specification. Not a runtime event. Parse once, integrate permanently.",
 
     "what_aee_is": {
-      "one_sentence": "AEE is a 14-field JSON envelope format for agent-to-agent communication with explicit causality.",
+      "one_sentence": "AEE is a 14-field JSON envelope format (10 required, 4 optional) for agent-to-agent communication with explicit causality.",
       "core_value": "Fixed structure, no inference required, every field answers a question.",
       "design_origin": "Born as an efficiency choice: if AIs picked how to exchange work, they would choose rigid, minimal, unambiguous."
     },
@@ -30,6 +31,9 @@
     ],
 
     "envelope_fields": {
+      "total": 14,
+      "required_count": 10,
+      "optional_count": 4,
       "required": {
         "v": {"type": "string", "description": "Protocol version. Always \"1\" for now."},
         "id": {"type": "string", "description": "Unique envelope identifier. ULID or UUID recommended."},
@@ -38,8 +42,8 @@
         "from": {"type": "string", "description": "Sender identifier. Namespaced: agent.*, human.*, service.*"},
         "to": {"type": "string", "description": "Recipient identifier. Same namespace conventions."},
         "intent": {"type": "string", "description": "What this envelope means. Namespaced: ops.backup.check, aee.status.ping, etc."},
-        "corr": {"type": "string", "description": "Correlation ID. Shared across all envelopes in a workflow. Critical for tracing."},
-        "reply_to": {"type": "string|null", "description": "ID of the envelope this is replying to. null for initiating envelopes."},
+        "corr": {"type": "string", "description": "Correlation ID. MUST be shared across all envelopes in a workflow. Critical for tracing."},
+        "reply_to": {"type": "string|null", "description": "ID of the envelope this is replying to. MUST be null for initiating envelopes. MUST be set for responses."},
         "payload": {"type": "object", "description": "Intent-specific data. Schema depends on intent."}
       },
       "optional": {
@@ -66,14 +70,14 @@
     },
 
     "causality_model": {
-      "corr": "Correlation ID. Every envelope in a workflow shares the same corr. Use this to query all related messages.",
+      "corr": "Correlation ID. Every envelope in a workflow MUST share the same corr. Use this to query all related messages.",
       "reply_to": "Direct lineage. Points to the specific envelope this one responds to. Enables causal chain reconstruction.",
-      "pattern": "Initiator sets corr, leaves reply_to null. Every subsequent envelope copies corr, sets reply_to to the triggering envelope's id."
+      "pattern": "Initiator sets corr, leaves reply_to null. Every subsequent envelope MUST copy corr, MUST set reply_to to the triggering envelope's id."
     },
 
     "reserved_intents": {
       "namespace": "aee.*",
-      "purpose": "Protocol-level operations. All AEE-compliant agents SHOULD support these.",
+      "purpose": "Protocol-level operations. AEE-compliant agents SHOULD support these.",
       "intents": [
         {"intent": "aee.status.ping", "description": "Heartbeat check. Expects pong in result."},
         {"intent": "aee.status.health", "description": "Detailed health report with components and status."},
@@ -97,7 +101,7 @@
         "count": 5,
         "status": "Log-friendly subset for observability. NOT AEE-compliant.",
         "compliant": false,
-        "warning": "Do NOT use for agent-to-agent execution. Missing corr/reply_to breaks causality. Use only for logging and metrics before full adoption."
+        "warning": "MUST NOT be used for agent-to-agent execution. Missing corr/reply_to breaks causality. Use only for logging and metrics before full adoption."
       }
     },
 
@@ -164,7 +168,7 @@
 
     "wrap_by_reference": {
       "problem": "Embedding full envelopes in payload creates nested bloat.",
-      "solution": "Reference envelopes by ID instead of embedding.",
+      "solution": "SHOULD reference envelopes by ID instead of embedding.",
       "shape": {
         "payload": {
           "references": [
@@ -190,16 +194,16 @@
       "to_emit_envelope": [
         "Generate unique id (ULID recommended)",
         "Set ts to current UTC ISO 8601",
-        "Set type based on message purpose",
+        "Set type based on message purpose (task/result/event/error/stream)",
         "Set from to your identifier",
         "Set to to recipient identifier",
         "Set intent to describe payload meaning",
-        "Set corr (new for initiating, copy for replying)",
-        "Set reply_to (null for initiating, predecessor id for replying)",
+        "Set corr (new for initiating, MUST copy for replying)",
+        "Set reply_to (MUST be null for initiating, MUST be predecessor id for replying)",
         "Populate payload per intent schema"
       ],
       "to_process_envelope": [
-        "Validate v, id, ts, type, from, to, intent, corr, reply_to, payload exist",
+        "Validate all 10 required fields exist",
         "Route by type first (task/result/event/error/stream)",
         "Dispatch by intent second",
         "Preserve corr for any responses",
