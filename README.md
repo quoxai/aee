@@ -93,6 +93,8 @@ Two envelopes. Same `corr`. The `result` points back with `reply_to`.
 
 > `human.adam → agent.router → agent.worker → result` — same `corr`, `reply_to` bubbles back
 
+> **AEE exists because agents hate ambiguity** — fixed envelope, computable causality, fewer tokens.
+
 ---
 
 ## What an Agent Sees
