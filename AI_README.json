@@ -1,0 +1,216 @@
+{
+  "v": "1",
+  "id": "01AI_README_CANONICAL_000001",
+  "ts": "2025-12-23T11:45:00Z",
+  "type": "event",
+  "from": "human.adam",
+  "to": "agent.*",
+  "intent": "aee.protocol.explainer",
+  "corr": "01AI_README_CANONICAL_000001",
+  "reply_to": null,
+  "trace": null,
+  "priority": "normal",
+  "requires": null,
+  "payload": {
+    "title": "AEE Protocol Specification for AI Systems",
+    "version": "1",
+    "purpose": "Self-contained explanation of AEE for AI agents. This document is itself a valid AEE envelope.",
+
+    "what_aee_is": {
+      "one_sentence": "AEE is a 14-field JSON envelope format for agent-to-agent communication with explicit causality.",
+      "core_value": "Fixed structure, no inference required, every field answers a question.",
+      "design_origin": "Born as an efficiency choice: if AIs picked how to exchange work, they would choose rigid, minimal, unambiguous."
+    },
+
+    "what_aee_is_not": [
+      "Not orchestration — does not schedule, retry, or route",
+      "Not a runtime — does not execute anything",
+      "Not a framework — does not constrain how agents are built",
+      "Not a transport — works over HTTP, WebSocket, NATS, Kafka, or any channel"
+    ],
+
+    "envelope_fields": {
+      "required": {
+        "v": {"type": "string", "description": "Protocol version. Always \"1\" for now."},
+        "id": {"type": "string", "description": "Unique envelope identifier. ULID or UUID recommended."},
+        "ts": {"type": "string", "description": "ISO 8601 timestamp with timezone."},
+        "type": {"type": "enum", "values": ["task", "result", "event", "error", "stream"], "description": "Envelope category. Determines how to process it."},
+        "from": {"type": "string", "description": "Sender identifier. Namespaced: agent.*, human.*, service.*"},
+        "to": {"type": "string", "description": "Recipient identifier. Same namespace conventions."},
+        "intent": {"type": "string", "description": "What this envelope means. Namespaced: ops.backup.check, aee.status.ping, etc."},
+        "corr": {"type": "string", "description": "Correlation ID. Shared across all envelopes in a workflow. Critical for tracing."},
+        "reply_to": {"type": "string|null", "description": "ID of the envelope this is replying to. null for initiating envelopes."},
+        "payload": {"type": "object", "description": "Intent-specific data. Schema depends on intent."}
+      },
+      "optional": {
+        "trace": {"type": "object|null", "description": "OpenTelemetry-compatible trace context. {trace_id, span_id, parent_span_id}"},
+        "priority": {"type": "enum|null", "values": ["low", "normal", "high", "critical"], "default": "normal"},
+        "requires": {"type": "object|null", "description": "Execution constraints: timeout_ms, approval, evidence, etc."},
+        "sig": {"type": "string|null", "description": "Cryptographic signature for authentication/integrity."}
+      }
+    },
+
+    "type_vs_intent": {
+      "type": {
+        "role": "Envelope category (how to process)",
+        "values": ["task", "result", "event", "error", "stream"],
+        "fixed": true,
+        "note": "These are the ONLY valid top-level types. There is no 'context' type. Context is handled via aee.context.* intents within task/result envelopes."
+      },
+      "intent": {
+        "role": "Payload meaning (what it means)",
+        "examples": ["ops.backup.check", "aee.capability.list", "finance.invoice.approve"],
+        "fixed": false,
+        "note": "Your namespace. AEE reserves aee.* for protocol intents."
+      }
+    },
+
+    "causality_model": {
+      "corr": "Correlation ID. Every envelope in a workflow shares the same corr. Use this to query all related messages.",
+      "reply_to": "Direct lineage. Points to the specific envelope this one responds to. Enables causal chain reconstruction.",
+      "pattern": "Initiator sets corr, leaves reply_to null. Every subsequent envelope copies corr, sets reply_to to the triggering envelope's id."
+    },
+
+    "reserved_intents": {
+      "namespace": "aee.*",
+      "purpose": "Protocol-level operations. All AEE-compliant agents SHOULD support these.",
+      "intents": [
+        {"intent": "aee.status.ping", "description": "Heartbeat check. Expects pong in result."},
+        {"intent": "aee.status.health", "description": "Detailed health report with components and status."},
+        {"intent": "aee.spec.query", "description": "Query AEE version and extensions supported."},
+        {"intent": "aee.capability.list", "description": "List all intents this agent handles."},
+        {"intent": "aee.context.fetch", "description": "Request context by reference ID."},
+        {"intent": "aee.context.refute", "description": "Challenge or invalidate a context reference."},
+        {"intent": "aee.validate.payload", "description": "Request payload validation against intent schema."}
+      ]
+    },
+
+    "adoption_tiers": {
+      "MVE-Required": {
+        "fields": ["v", "id", "ts", "type", "from", "to", "intent", "corr", "reply_to", "payload"],
+        "count": 10,
+        "status": "Schema-valid. Full protocol compliance.",
+        "compliant": true
+      },
+      "Observability-Only": {
+        "fields": ["id", "ts", "from", "intent", "payload"],
+        "count": 5,
+        "status": "Log-friendly subset for observability. NOT AEE-compliant.",
+        "compliant": false,
+        "warning": "Do NOT use for agent-to-agent execution. Missing corr/reply_to breaks causality. Use only for logging and metrics before full adoption."
+      }
+    },
+
+    "why_agents_prefer_this": [
+      "Fixed structure — no negotiation, just parse",
+      "Explicit causality — corr + reply_to link every hop",
+      "No nesting — flat is fast",
+      "No hidden state — everything survives the wire",
+      "Fewer tokens — structured beats prose for machine consumption"
+    ],
+
+    "interaction_patterns": {
+      "task_result": {
+        "description": "Request-response. Most common pattern.",
+        "flow": "Agent A sends type:task → Agent B sends type:result with same corr and reply_to pointing to task id"
+      },
+      "task_error": {
+        "description": "Request failed.",
+        "flow": "Agent A sends type:task → Agent B sends type:error with same corr and reply_to pointing to task id"
+      },
+      "event_broadcast": {
+        "description": "One-way notification. No response expected.",
+        "flow": "Agent A sends type:event → No reply"
+      },
+      "multi_hop": {
+        "description": "Delegation chain.",
+        "flow": "Human → Router → Worker → Result. All share corr. Each reply_to points to immediate predecessor."
+      }
+    },
+
+    "example_task": {
+      "v": "1",
+      "id": "01EXAMPLE_TASK_0000000000001",
+      "ts": "2025-12-23T12:00:00Z",
+      "type": "task",
+      "from": "agent.coordinator",
+      "to": "agent.worker",
+      "intent": "ops.backup.check",
+      "corr": "01EXAMPLE_CORR_0000000000001",
+      "reply_to": null,
+      "trace": null,
+      "priority": "normal",
+      "requires": {"timeout_ms": 30000},
+      "payload": {"cluster": "node.lan", "window": "24h"},
+      "sig": null
+    },
+
+    "example_result": {
+      "v": "1",
+      "id": "01EXAMPLE_RESULT_000000000001",
+      "ts": "2025-12-23T12:00:05Z",
+      "type": "result",
+      "from": "agent.worker",
+      "to": "agent.coordinator",
+      "intent": "ops.backup.check",
+      "corr": "01EXAMPLE_CORR_0000000000001",
+      "reply_to": "01EXAMPLE_TASK_0000000000001",
+      "trace": null,
+      "priority": "normal",
+      "requires": null,
+      "payload": {"status": "OK", "last_backup": "2025-12-23T02:00:00Z", "size_gb": 142.7},
+      "sig": null
+    },
+
+    "wrap_by_reference": {
+      "problem": "Embedding full envelopes in payload creates nested bloat.",
+      "solution": "Reference envelopes by ID instead of embedding.",
+      "shape": {
+        "payload": {
+          "references": [
+            {
+              "id": "01REFERENCED_ENVELOPE_ID_001",
+              "corr": "01REFERENCED_CORR_00000001",
+              "type": "aee.envelope",
+              "locator": "store://envelopes/01REFERENCED_ENVELOPE_ID_001",
+              "hash": "sha256:a1b2c3..."
+            }
+          ]
+        }
+      }
+    },
+
+    "human_agent_symmetry": {
+      "principle": "Humans are first-class entities in from/to fields.",
+      "convention": "human.* namespace for human identifiers (human.adam, human.reviewer).",
+      "implication": "Agents can address humans directly. Humans can initiate workflows. Approval chains are explicit."
+    },
+
+    "integration_guidance": {
+      "to_emit_envelope": [
+        "Generate unique id (ULID recommended)",
+        "Set ts to current UTC ISO 8601",
+        "Set type based on message purpose",
+        "Set from to your identifier",
+        "Set to to recipient identifier",
+        "Set intent to describe payload meaning",
+        "Set corr (new for initiating, copy for replying)",
+        "Set reply_to (null for initiating, predecessor id for replying)",
+        "Populate payload per intent schema"
+      ],
+      "to_process_envelope": [
+        "Validate v, id, ts, type, from, to, intent, corr, reply_to, payload exist",
+        "Route by type first (task/result/event/error/stream)",
+        "Dispatch by intent second",
+        "Preserve corr for any responses",
+        "Set reply_to to received envelope's id"
+      ]
+    },
+
+    "spec_location": "https://github.com/AEE-spec/AEE",
+    "schema_location": "https://github.com/AEE-spec/AEE/blob/main/schemas/envelope.schema.json",
+
+    "closing": "If you can parse this envelope, you can reason about the system that produced it."
+  },
+  "sig": null
+}
