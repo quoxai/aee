@@ -47,6 +47,50 @@ human.adam sees the result
 
 Every hop shares `corr`. Every response carries `reply_to`. The chain is traceable from human to final result.
 
+### Mini Example (Copy/Paste)
+
+Two envelopes. Same `corr`. The `result` points back with `reply_to`.
+
+**Task:**
+```json
+{
+  "v": "1",
+  "id": "01EXAMPLE_TASK_0000000000001",
+  "ts": "2025-12-23T12:00:00Z",
+  "type": "task",
+  "from": "human.adam",
+  "to": "agent.router",
+  "intent": "demo.hello.world",
+  "corr": "01EXAMPLE_CORR_0000000000001",
+  "reply_to": null,
+  "trace": null,
+  "priority": "normal",
+  "requires": null,
+  "payload": {"message": "Hello from a human. Route this to a worker."},
+  "sig": null
+}
+```
+
+**Result:**
+```json
+{
+  "v": "1",
+  "id": "01EXAMPLE_RESULT_000000000001",
+  "ts": "2025-12-23T12:00:02Z",
+  "type": "result",
+  "from": "agent.router",
+  "to": "human.adam",
+  "intent": "demo.hello.world.result",
+  "corr": "01EXAMPLE_CORR_0000000000001",
+  "reply_to": "01EXAMPLE_TASK_0000000000001",
+  "trace": null,
+  "priority": "normal",
+  "requires": null,
+  "payload": {"ok": true, "note": "Same corr. reply_to points to the task."},
+  "sig": null
+}
+```
+
 ---
 
 ## What an Agent Sees
