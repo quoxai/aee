@@ -2,52 +2,37 @@
 
 > **Experimental — Open for Feedback**
 
-**When systems exchange work, the meaning usually survives. The causality doesn't.**
+**AEE is a format for agents talking to agents—with humans in the loop.**
 
-Who started this request? Which response goes with which request? Where did the chain break?
+Born as an efficiency choice: if AIs picked how to exchange work, they'd choose rigid, minimal, unambiguous. A small envelope carrying *who asked*, *what they want*, *how replies connect*.
 
-AEE is a simple envelope that makes these questions answerable. It doesn't change how your agents work—it just makes sure you can trace what happened.
+> `human.adam → agent.router → agent.worker` — same `corr`, traceable chain.
+
+### Why AIs Like It
+
+- **Fixed structure** → No negotiation, just parse
+- **Explicit causality** → `corr` + `reply_to` link every hop
+- **No nesting** → Flat is fast
+- **No hidden state** → Everything survives the wire
+
+Humans benefit because machines are explicit. If agents can reason about it, you can debug it.
 
 ---
 
-## The Problem You Already Have
+## The Problem This Solves
 
-You're debugging at 2am. Logs look like this:
+Debugging at 2am. Logs say:
 
 ```
 [INFO] Task received: check backup status
 [INFO] Calling sub-agent
 [ERROR] Timeout after 30s
-[INFO] Retrying...
 [ERROR] Failed
 ```
 
-You're asking: *Who started this? Is this the same workflow? Where did it break?*
+*Who started this? Same workflow? Where did it break?*
 
-You're grepping. Guessing. Asking Slack.
-
----
-
-## The Same Logs, With AEE
-
-```
-human.ops_oncall
-       ↓ corr: abc-123
-agent.backup_auditor
-       ↓ corr: abc-123
-agent.pbs_checker
-       ↓ corr: abc-123
-error (reply_to: def-456)
-```
-
-Now you see:
-- **Who started it:** `human.ops_oncall`
-- **Same workflow:** `corr: abc-123` everywhere
-- **Where it broke:** error traces back to `def-456`
-
-You filter by `corr`. You see the chain. You fix the problem.
-
-**That's it.** AEE doesn't make your agents smarter. It makes your systems *rememberable*.
+With AEE, every message carries `corr` and `reply_to`. Filter by `corr`, see the chain, fix the problem.
 
 ---
 
