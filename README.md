@@ -91,6 +91,8 @@ Two envelopes. Same `corr`. The `result` points back with `reply_to`.
 }
 ```
 
+> `human.adam → agent.router → agent.worker → result` — same `corr`, `reply_to` bubbles back
+
 ---
 
 ## What an Agent Sees
