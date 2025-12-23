@@ -95,6 +95,8 @@ Two envelopes. Same `corr`. The `result` points back with `reply_to`.
 
 > **AEE exists because agents hate ambiguity** — fixed envelope, computable causality, fewer tokens.
 
+> If an agent can parse it, a human can grep it.
+
 ---
 
 ## What an Agent Sees
