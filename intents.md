@@ -2,6 +2,243 @@
 
 This document defines a **small, illustrative set of intent schemas** for use with **AEE v1 (Agent Envelope Exchange)**.
 
+> **Note:** The `aee.*` namespace is reserved for protocol negotiation. Application intents should use other namespaces.
+
+---
+
+## Reserved Protocol Intents (`aee.*`)
+
+The `aee.*` namespace is **reserved for protocol negotiation and context retrieval only**. These intents enable agents to discover capabilities, fetch context, and validate payloads without custom integration.
+
+> If you find yourself adding scheduling, workflow, or orchestration semantics to `aee.*`, you're leaving AEE and building an orchestrator.
+
+---
+
+### aee.status.ping
+
+Liveness check. Responds with pong.
+
+#### Task Payload Schema
+
+```json
+{
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false
+}
+```
+
+#### Result Payload Schema
+
+```json
+{
+  "type": "object",
+  "required": ["pong"],
+  "properties": {
+    "pong": {"type": "boolean", "const": true},
+    "ts": {"type": "string", "description": "Response timestamp (ISO 8601)"}
+  }
+}
+```
+
+---
+
+### aee.status.health
+
+Health and readiness status.
+
+#### Task Payload Schema
+
+```json
+{
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false
+}
+```
+
+#### Result Payload Schema
+
+```json
+{
+  "type": "object",
+  "required": ["status"],
+  "properties": {
+    "status": {"type": "string", "enum": ["healthy", "degraded", "unhealthy"]},
+    "details": {"type": "object", "additionalProperties": true}
+  }
+}
+```
+
+---
+
+### aee.spec.query
+
+Return supported AEE version and capabilities.
+
+#### Task Payload Schema
+
+```json
+{
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false
+}
+```
+
+#### Result Payload Schema
+
+```json
+{
+  "type": "object",
+  "required": ["aee_version"],
+  "properties": {
+    "aee_version": {"type": "string", "description": "Supported AEE envelope version"},
+    "extensions": {"type": "array", "items": {"type": "string"}, "description": "Optional extensions supported"}
+  }
+}
+```
+
+---
+
+### aee.capability.list
+
+List supported intents.
+
+#### Task Payload Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "namespace_filter": {"type": "string", "description": "Optional: filter by intent namespace prefix"}
+  }
+}
+```
+
+#### Result Payload Schema
+
+```json
+{
+  "type": "object",
+  "required": ["intents"],
+  "properties": {
+    "intents": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "List of supported intent identifiers"
+    }
+  }
+}
+```
+
+---
+
+### aee.context.fetch
+
+Retrieve envelope or payload by reference.
+
+#### Task Payload Schema
+
+```json
+{
+  "type": "object",
+  "required": ["id"],
+  "properties": {
+    "id": {"type": "string", "description": "Envelope ID to retrieve"},
+    "corr": {"type": "string", "description": "Optional: correlation ID for context"},
+    "locator": {"type": "string", "description": "Optional: URI or path hint"},
+    "hash": {"type": "string", "description": "Optional: expected content hash for verification"}
+  }
+}
+```
+
+#### Result Payload Schema
+
+```json
+{
+  "type": "object",
+  "required": ["found"],
+  "properties": {
+    "found": {"type": "boolean"},
+    "envelope": {"type": "object", "description": "The retrieved envelope (if found)"},
+    "hash": {"type": "string", "description": "Content hash of returned envelope"}
+  }
+}
+```
+
+---
+
+### aee.context.refute
+
+Reject a referenced context with reason.
+
+#### Task Payload Schema
+
+```json
+{
+  "type": "object",
+  "required": ["id", "reason"],
+  "properties": {
+    "id": {"type": "string", "description": "Envelope ID being refuted"},
+    "reason": {"type": "string", "description": "Why this context is being rejected"}
+  }
+}
+```
+
+#### Result Payload Schema
+
+```json
+{
+  "type": "object",
+  "required": ["acknowledged"],
+  "properties": {
+    "acknowledged": {"type": "boolean"}
+  }
+}
+```
+
+---
+
+### aee.validate.payload
+
+Validate a payload against an intent schema.
+
+#### Task Payload Schema
+
+```json
+{
+  "type": "object",
+  "required": ["intent", "payload_to_validate"],
+  "properties": {
+    "intent": {"type": "string", "description": "Intent whose schema should be used"},
+    "payload_to_validate": {"type": "object", "description": "The payload to validate"},
+    "type_hint": {"type": "string", "enum": ["task", "result", "error"], "description": "Which schema variant to validate against"}
+  }
+}
+```
+
+#### Result Payload Schema
+
+```json
+{
+  "type": "object",
+  "required": ["valid"],
+  "properties": {
+    "valid": {"type": "boolean"},
+    "errors": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Validation error messages (if invalid)"
+    }
+  }
+}
+```
+
+---
+
+## Application Intents
+
 These intents are:
 - broadly useful across domains
 - simple enough to understand at a glance

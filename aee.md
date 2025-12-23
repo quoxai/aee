@@ -72,7 +72,31 @@ Agents may ignore unknown keys. Producers should keep this compact.
 {"timeout_ms": 30000, "evidence": true, "human_approval": false}
 ```
 
-### 2.4 `sig`
+### 2.5 Entity Identifiers (`from`, `to`)
+
+The `from` and `to` fields accept any entity identifier. AEE treats **humans as first-class senders and recipients**, not special cases.
+
+**Format:** `<type>.<name>` (recommended) or any unique identifier.
+
+**Common prefixes:**
+- `agent.*` — autonomous agents (e.g., `agent.backup_auditor`)
+- `service.*` — traditional services (e.g., `service.billing`)
+- `human.*` — human participants (e.g., `human.adam`)
+- `bus.*` — broadcast channels (e.g., `bus.ops`)
+
+**Example: Human initiates a task**
+```json
+{
+  "from": "human.adam",
+  "to": "agent.code_reviewer",
+  "intent": "code.review.request",
+  ...
+}
+```
+
+**Why this matters:** When a human sends a task that cascades through multiple agents, the full causality chain is traceable: `human.adam → agent.router → agent.reviewer → service.linter`. The envelope's `corr` and `reply_to` fields maintain provenance regardless of whether senders are humans, agents, or services.
+
+### 2.6 `sig`
 Optional. If used, it should bind at least:
 - `v,id,ts,type,from,to,intent,corr,reply_to,payload`
 
@@ -263,3 +287,114 @@ Keep AEE v1 stable. Add extensions as separate documents:
 ## 9) Why AEE Exists (One Sentence)
 
 **AEE makes agent messages portable and composable by standardizing the envelope while letting communities standardize meaning through intent-specific schemas.**
+
+---
+
+## 10) Adoption Tiers
+
+AEE supports incremental adoption. Not every system needs full spec compliance on day one.
+
+### MVE-Required (Schema-Valid)
+
+The **Minimal Viable Envelope (MVE-Required)** includes all fields required by the JSON Schema:
+
+`v`, `id`, `ts`, `type`, `from`, `to`, `intent`, `corr`, `priority`, `payload`
+
+A system emitting MVE-Required envelopes is **fully schema-valid** and interoperable with any AEE-compliant consumer.
+
+### MVE-5 (Log-Friendly)
+
+For **logging, telemetry, and observability-only** contexts, a 5-field subset is recognized:
+
+`v`, `id`, `type`, `from`, `intent`
+
+**MVE-5 is NOT schema-valid AEE.** It is a convenience envelope for systems that only emit logs or telemetry and do not participate in request/response flows. MVE-5 envelopes:
+- Can be parsed by AEE-aware log aggregators
+- Cannot be used for task/result correlation (missing `corr`, `reply_to`)
+- Should not be sent to agents expecting full envelopes
+
+**Use MVE-5 when:** You want structured logs without full AEE overhead.
+**Use MVE-Required when:** You participate in agent-to-agent communication.
+
+### Badge Certification
+
+A system may claim **MVE-Required** compliance if:
+1. It emits envelopes with all 10 required fields
+2. Those envelopes parse correctly against the AEE v1 JSON Schema
+3. `reply_to` is non-null for `result` and `error` types
+
+The badge certifies **structural compliance only**. It does not certify:
+- Payload schema conformance
+- Semantic correctness of intents
+- Support for aee.* protocol intents
+
+---
+
+## 11) Reserved Intent Namespace (`aee.*`)
+
+The `aee.*` namespace is **reserved for protocol negotiation and context retrieval only**.
+
+These intents enable agents to discover capabilities, fetch context, and validate payloads without custom integration. They are **protocol primitives**, not orchestration.
+
+> If you find yourself adding scheduling, workflow, or orchestration semantics to `aee.*`, you're leaving AEE and building an orchestrator.
+
+### Seed Intents
+
+| Intent | Purpose |
+|--------|---------|
+| `aee.status.ping` | Liveness check (responds with pong) |
+| `aee.status.health` | Health/readiness status |
+| `aee.spec.query` | Return supported AEE version and capabilities |
+| `aee.capability.list` | List supported intents |
+| `aee.context.fetch` | Retrieve envelope or payload by reference |
+| `aee.context.refute` | Reject a referenced context with reason |
+| `aee.validate.payload` | Validate a payload against an intent schema |
+
+See [intents.md](intents.md#reserved-protocol-intents-aee) for payload schemas.
+
+---
+
+## 12) Referencing vs. Embedding (Wrap-by-Reference)
+
+When an envelope needs to reference prior context (e.g., the original task that spawned a result), **use references, not nested envelopes**.
+
+### Why Avoid Nesting
+
+Embedding full envelopes inside payloads creates:
+- **Matryoshka bloat:** Deeply nested structures that grow with each hop
+- **Token collapse:** LLMs processing nested envelopes waste context on redundant structure
+- **Signature ambiguity:** Which envelope is signed? The outer or inner?
+
+### Recommended: `payload.references`
+
+When referencing prior envelopes, use a `references` array in the payload:
+
+```json
+{
+  "payload": {
+    "references": [
+      {
+        "id": "01JFB2R1JZKQ9V3K8W8Y9W1F2A",
+        "corr": "01JFB2QX0K8X5K6ZJ9G2C0C1MW",
+        "type": "aee.envelope",
+        "locator": "store://envelopes/01JFB2R1JZKQ9V3K8W8Y9W1F2A",
+        "hash": "sha256:a1b2c3..."
+      }
+    ],
+    ...
+  }
+}
+```
+
+**Fields:**
+- `id` *(required)* — The referenced envelope's ID
+- `corr` *(optional)* — Correlation ID for context
+- `type` *(required)* — Always `"aee.envelope"` for envelope references
+- `locator` *(optional)* — URI or path to retrieve the full envelope
+- `hash` *(optional)* — Content hash for integrity verification
+
+To retrieve the full envelope, use `aee.context.fetch` with the reference.
+
+### Exception: Archival/Forensic Snapshots
+
+When creating immutable audit logs or forensic snapshots, embedding full envelopes as **inert blobs** in a `result` payload is acceptable. These are not active routing—they are historical records.

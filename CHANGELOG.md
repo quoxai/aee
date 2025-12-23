@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Repository housekeeping and GitHub templates
+- MVE (Minimal Viable Envelope) adoption tiers: MVE-Required (schema-valid) and MVE-5 (log-friendly)
+- Reserved `aee.*` protocol intent namespace with 7 seed intents (ping, health, spec.query, capability.list, context.fetch, context.refute, validate.payload)
+- Human↔Agent symmetry: clarified `from`/`to` fields support `human.*` identifiers as first-class entities
+- Wrap-by-reference guidance: recommended `payload.references` shape to avoid nested envelope bloat
+- Middleware adoption strategy documentation for gateway-layer AEE injection
 
 ## [0.1.0] - 2025-12-14
 
