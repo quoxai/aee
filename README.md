@@ -55,6 +55,15 @@ Every hop shares `corr`. Every response carries `reply_to`. The chain is traceab
 - **AEE is not a framework** — it doesn't care how your agents are built
 - **AEE is just structure** — 14 fields that make causality explicit
 
+### `type` vs `intent`
+
+| Field | What it is | Examples |
+|-------|-----------|----------|
+| `type` | Envelope category (fixed set) | `task`, `result`, `event`, `error`, `stream` |
+| `intent` | Payload meaning (your namespace) | `ops.backup.check`, `aee.capability.list` |
+
+`type` tells you *how* to handle the envelope. `intent` tells you *what* it means.
+
 ### Mini Example (Copy/Paste)
 
 Two envelopes. Same `corr`. The `result` points back with `reply_to`.
@@ -175,6 +184,8 @@ The LLM (or any parser):
 ## Get Started
 
 **→ [Quickstart](quickstart.md)** — Emit your first envelope in 5 minutes. No spec reading required.
+
+**→ [Protocol Handshake](examples/handshake.md)** — How agents discover supported intents (discovery, not orchestration).
 
 ---
 
