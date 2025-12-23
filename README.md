@@ -47,6 +47,14 @@ human.adam sees the result
 
 Every hop shares `corr`. Every response carries `reply_to`. The chain is traceable from human to final result.
 
+### Mental Model
+
+- **AEE is like HTTP headers** — it standardizes the envelope, not the content
+- **AEE is not orchestration** — it doesn't schedule, retry, or route
+- **AEE is not a runtime** — it doesn't execute anything
+- **AEE is not a framework** — it doesn't care how your agents are built
+- **AEE is just structure** — 14 fields that make causality explicit
+
 ### Mini Example (Copy/Paste)
 
 Two envelopes. Same `corr`. The `result` points back with `reply_to`.
@@ -101,21 +109,56 @@ Two envelopes. Same `corr`. The `result` points back with `reply_to`.
 
 ## What an Agent Sees
 
-**Without AEE** — ambiguous message, no correlation:
+**Without AEE** — ambiguous, unrecoverable:
 
 ```
 {"task": "check backup", "from": "someone", "data": {...}}
 ```
 
-*Who is "someone"? What workflow? How to reply?*
+What's missing:
+- **No `corr`** → Cannot link to workflow. If this fails, no retry context.
+- **No `reply_to`** → Cannot trace what triggered this. Causality is lost.
+- **No `intent`** → Must infer meaning from payload. Fragile.
+- **No `to`** → Broadcast? Direct? Unknown.
 
-**With AEE** — structured envelope, explicit causality:
+**With AEE** — structured, recoverable:
 
 ```
 {"from": "agent.router", "to": "agent.worker", "corr": "xyz-789", "reply_to": "bbb-222", "intent": "backup.check", ...}
 ```
 
-Parse it. Know the chain. Reply correctly.
+Every field answers a question. No inference required.
+
+---
+
+## What an LLM Actually Processes
+
+**Free-form prompt** — variable structure, implicit context:
+
+```
+"Please check the backup status. This is from the router.
+Reply when done. The original request was from Adam."
+```
+
+The LLM must:
+- Parse natural language to extract intent
+- Infer who to reply to
+- Guess at correlation
+- Hope the context survives
+
+**AEE envelope** — fixed structure, explicit context:
+
+```json
+{"from": "agent.router", "to": "agent.worker", "intent": "backup.check", "corr": "xyz-789", "reply_to": "bbb-222"}
+```
+
+The LLM (or any parser):
+- Reads 5 predictable keys
+- Zero inference, zero ambiguity
+- Fewer tokens, faster parsing
+- Correlation is computable, not guessed
+
+**Result:** Lower cost, higher reliability, deterministic traceability.
 
 ---
 
