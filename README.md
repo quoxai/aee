@@ -6,8 +6,6 @@
 
 Born as an efficiency choice: if AIs picked how to exchange work, they'd choose rigid, minimal, unambiguous. A small envelope carrying *who asked*, *what they want*, *how replies connect*.
 
-> `human.adam → agent.router → agent.worker` — same `corr`, traceable chain.
-
 ### Why AIs Like It
 
 - **Fixed structure** → No negotiation, just parse
@@ -17,22 +15,57 @@ Born as an efficiency choice: if AIs picked how to exchange work, they'd choose 
 
 Humans benefit because machines are explicit. If agents can reason about it, you can debug it.
 
+### How It Flows
+
+```
+human.adam                       # A human starts a task
+    │
+    │ id: aaa-111
+    │ corr: xyz-789
+    │ intent: backup.check
+    ▼
+agent.router                     # Router delegates
+    │
+    │ id: bbb-222
+    │ corr: xyz-789              # same corr
+    │ reply_to: aaa-111          # points back
+    ▼
+agent.worker                     # Worker does the job
+    │
+    │ id: ccc-333
+    │ corr: xyz-789              # same corr
+    │ reply_to: bbb-222          # points back
+    ▼
+result (or error)                # Response bubbles up
+    │
+    │ id: ddd-444
+    │ corr: xyz-789              # same corr
+    │ reply_to: ccc-333          # traceable chain
+    ▼
+human.adam sees the result
+```
+
+Every hop shares `corr`. Every response carries `reply_to`. The chain is traceable from human to final result.
+
 ---
 
-## The Problem This Solves
+## What an Agent Sees
 
-Debugging at 2am. Logs say:
+**Without AEE** — ambiguous message, no correlation:
 
 ```
-[INFO] Task received: check backup status
-[INFO] Calling sub-agent
-[ERROR] Timeout after 30s
-[ERROR] Failed
+{"task": "check backup", "from": "someone", "data": {...}}
 ```
 
-*Who started this? Same workflow? Where did it break?*
+*Who is "someone"? What workflow? How to reply?*
 
-With AEE, every message carries `corr` and `reply_to`. Filter by `corr`, see the chain, fix the problem.
+**With AEE** — structured envelope, explicit causality:
+
+```
+{"from": "agent.router", "to": "agent.worker", "corr": "xyz-789", "reply_to": "bbb-222", "intent": "backup.check", ...}
+```
+
+Parse it. Know the chain. Reply correctly.
 
 ---
 
