@@ -1,6 +1,10 @@
 # AEE — Agent Envelope Exchange
 
-> **Experimental — Open for Feedback**
+> **Status:** Experimental — Open for Feedback
+> **Version:** 1
+> **License:** MIT
+
+**IETF Internet-Draft:** [`draft-cowles-aee-00`](https://datatracker.ietf.org/doc/draft-cowles-aee/)
 
 **AEE is a format for agents talking to agents—with humans in the loop.**
 
@@ -97,7 +101,7 @@ Two envelopes. Same `corr`. The `result` points back with `reply_to`.
   "type": "result",
   "from": "agent.router",
   "to": "human.adam",
-  "intent": "demo.hello.world.result",
+  "intent": "demo.hello.world",
   "corr": "01EXAMPLE_CORR_0000000000001",
   "reply_to": "01EXAMPLE_TASK_0000000000001",
   "trace": null,
@@ -219,7 +223,7 @@ The envelope stays stable. The **meaning** comes from intent-specific schemas pu
 
 ## Adoption Path
 
-- **[MVE (Minimal Viable Envelope)](aee.md#adoption-tiers)** — Start with 5 fields for logging, or 10 for full compliance
+- **[MVE (Minimal Viable Envelope)](aee.md#10-adoption-tiers)** — Start with 5 fields for logging, or 10 for full compliance
 - **[Reserved `aee.*` intents](intents.md#reserved-protocol-intents-aee)** — Protocol negotiation without custom integration
 - **[Middleware wedge](relationship-to-mcp-acp.md#middleware-adoption-strategy)** — Auto-wrap LLM calls at the gateway layer
 
@@ -280,7 +284,7 @@ The envelope stays stable. The **meaning** comes from intent-specific schemas pu
 
 ## Roadmap
 
-See [GitHub Issues](https://github.com/AdaminX/AEE/issues) for planned work:
+See [GitHub Issues](https://github.com/quoxai/aee/issues) for planned work:
 
 - Define intent registry conventions
 - Create example agent implementations (Python, TypeScript)
@@ -304,8 +308,8 @@ AEE is part of the **Quox protocol family** — three complementary specs that t
 | Protocol | Role | Repo |
 |----------|------|------|
 | **AEE** | Envelope format + causality | *(this repo)* |
-| **AOCL** | Orchestration control layers (policy, routing, HITL gates) | [AOCL](https://github.com/AdaminX/AOCL-Agent-Orchestration-Control-Layers-Protocol) |
-| **VOLT** | Verifiable evidence ledger + tamper-evident traces | [VOLT](https://github.com/AdaminX/VOLT-Protocol) |
+| **AOCL** | Orchestration control layers (policy, routing, HITL gates) | [AOCL](https://github.com/quoxai/aocl) |
+| **VOLT** | Verifiable evidence ledger + tamper-evident traces | [VOLT](https://github.com/quoxai/volt) |
 
 **How they connect:**
 - AEE envelopes carry `corr` and `reply_to` — AOCL uses these for layer-level audit, VOLT uses them as `correlation_id` for evidence chains.

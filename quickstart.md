@@ -110,6 +110,6 @@ Every message shares the same `corr`. Every response points to what it's replyin
 
 - **[Full Spec (aee.md)](aee.md)** — All 14 fields explained
 - **[Intent Registry (intents.md)](intents.md)** — Example intents with schemas
-- **[Adoption Tiers (aee.md#adoption-tiers)](aee.md#adoption-tiers)** — Start small with MVE-5
+- **[Adoption Tiers](aee.md#10-adoption-tiers)** — Start small with MVE-5
 
 **But you don't have to read those yet.** You already emitted a valid envelope. That's the point.

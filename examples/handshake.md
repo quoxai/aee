@@ -44,15 +44,13 @@
   "priority": "normal",
   "requires": null,
   "payload": {
-    "supported_intents": [
+    "intents": [
       "ops.backup.check",
       "ops.backup.run",
       "ops.network.probe",
       "aee.capability.list",
       "aee.status.ping"
-    ],
-    "aee_version": "1",
-    "notes": "Worker agent for ops tasks. Does not handle orchestration."
+    ]
   },
   "sig": null
 }

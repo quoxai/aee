@@ -43,12 +43,12 @@
         "to": {"type": "string", "description": "Recipient identifier. Same namespace conventions."},
         "intent": {"type": "string", "description": "What this envelope means. Namespaced: ops.backup.check, aee.status.ping, etc."},
         "corr": {"type": "string", "description": "Correlation ID. MUST be shared across all envelopes in a workflow. Critical for tracing."},
-        "reply_to": {"type": "string|null", "description": "ID of the envelope this is replying to. MUST be null for initiating envelopes. MUST be set for responses."},
+        "priority": {"type": "enum", "values": ["low", "normal", "high", "urgent"], "default": "normal", "description": "Message priority level."},
         "payload": {"type": "object", "description": "Intent-specific data. Schema depends on intent."}
       },
       "optional": {
+        "reply_to": {"type": "string|null", "description": "ID of the envelope this is replying to. MUST be null for initiating envelopes. MUST be non-null for result and error types."},
         "trace": {"type": "object|null", "description": "OpenTelemetry-compatible trace context. {trace_id, span_id, parent_span_id}"},
-        "priority": {"type": "enum|null", "values": ["low", "normal", "high", "critical"], "default": "normal"},
         "requires": {"type": "object|null", "description": "Execution constraints: timeout_ms, approval, evidence, etc."},
         "sig": {"type": "string|null", "description": "Cryptographic signature for authentication/integrity."}
       }
@@ -91,13 +91,13 @@
 
     "adoption_tiers": {
       "MVE-Required": {
-        "fields": ["v", "id", "ts", "type", "from", "to", "intent", "corr", "reply_to", "payload"],
+        "fields": ["v", "id", "ts", "type", "from", "to", "intent", "corr", "priority", "payload"],
         "count": 10,
         "status": "Schema-valid. Full protocol compliance.",
         "compliant": true
       },
       "Observability-Only": {
-        "fields": ["id", "ts", "from", "intent", "payload"],
+        "fields": ["v", "id", "type", "from", "intent"],
         "count": 5,
         "status": "Log-friendly subset for observability. NOT AEE-compliant.",
         "compliant": false,
@@ -211,8 +211,8 @@
       ]
     },
 
-    "spec_location": "https://github.com/AEE-spec/AEE",
-    "schema_location": "https://github.com/AEE-spec/AEE/blob/main/schemas/envelope.schema.json",
+    "spec_location": "https://github.com/quoxai/aee",
+    "schema_location": "https://github.com/quoxai/aee/blob/main/aee.md#6-json-schema-envelope--aee-v1schemajson",
 
     "closing": "If you can parse this envelope, you can reason about the system that produced it."
   },

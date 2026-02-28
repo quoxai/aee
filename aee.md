@@ -24,7 +24,7 @@ An AEE message is a JSON object with the following top-level fields:
 6. `to` *(string)* — recipient agent ID or channel (e.g. `"agent.manager"` or `"bus.ops"`)
 7. `intent` *(string)* — namespaced verb+noun (e.g. `"ops.backup.status.check"`)
 8. `corr` *(string)* — correlation ID for a whole workflow/thread
-9. `reply_to` *(string|null)* — `id` of message being replied to (MUST be non-null for `result`/`error`, null otherwise)
+9. `reply_to` *(string|null)* — `id` of message being replied to (MUST be non-null for `result`/`error`; SHOULD be null for other types)
 10. `trace` *(object|null)* — tracing hooks `{trace_id, span_id}` (optional but recommended)
 11. `priority` *(string)* — `low | normal | high | urgent`
 12. `requires` *(object|null)* — constraints/expectations (timeouts, approvals, evidence)
@@ -55,7 +55,7 @@ A stable, namespaced identifier:
 
 **Rule:** If two agents can't agree on `intent`, they don't share semantics.
 
-> **Note:** AEE does not prescribe transport; envelopes may be carried over any reliable or unreliable channel.
+> **Note:** AEE does not prescribe transport; envelopes MAY be carried over any reliable or unreliable channel.
 
 ### 2.3 `requires`
 A small "contract" for execution. Common keys:
@@ -65,14 +65,14 @@ A small "contract" for execution. Common keys:
 - `format` *(string)* — e.g. `"table"`, `"json"`, `"markdown"`
 - `min_confidence` *(number 0..1)*
 
-Agents may ignore unknown keys. Producers should keep this compact.
+Agents MAY ignore unknown keys. Producers SHOULD keep this compact.
 
 **Example:**
 ```json
 {"timeout_ms": 30000, "evidence": true, "human_approval": false}
 ```
 
-### 2.5 Entity Identifiers (`from`, `to`)
+### 2.4 Entity Identifiers (`from`, `to`)
 
 The `from` and `to` fields accept any entity identifier. AEE treats **humans as first-class senders and recipients**, not special cases.
 
@@ -96,8 +96,8 @@ The `from` and `to` fields accept any entity identifier. AEE treats **humans as 
 
 **Why this matters:** When a human sends a task that cascades through multiple agents, the full causality chain is traceable: `human.adam → agent.router → agent.reviewer → service.linter`. The envelope's `corr` and `reply_to` fields maintain provenance regardless of whether senders are humans, agents, or services.
 
-### 2.6 `sig`
-Optional. If used, it should bind at least:
+### 2.5 `sig`
+Optional. If used, it SHOULD bind at least:
 - `v,id,ts,type,from,to,intent,corr,reply_to,payload`
 
 Example `sig` objects:
@@ -107,6 +107,8 @@ Example `sig` objects:
 ---
 
 ## 3) Validity Rules (Normative)
+
+The key words "MUST", "MUST NOT", "SHOULD", "SHOULD NOT", and "MAY" in this document are to be interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 
 1. `v,id,ts,type,from,to,intent,corr,priority,payload` **MUST** exist.
 2. `type` **MUST** be one of: `task|result|event|error|stream`.
@@ -264,7 +266,7 @@ The envelope lets messages route, correlate, trace, and enforce basic contracts.
 
 ## 7) Conformance Tests (Recommended)
 
-A conforming implementation should:
+A conforming implementation SHOULD:
 
 * accept the sample messages above as valid
 * reject messages missing required fields
@@ -318,7 +320,7 @@ For **logging, telemetry, and observability-only** contexts, a 5-field subset is
 
 ### Badge Certification
 
-A system may claim **MVE-Required** compliance if:
+A system MAY claim **MVE-Required** compliance if:
 1. It emits envelopes with all 10 required fields
 2. Those envelopes parse correctly against the AEE v1 JSON Schema
 3. `reply_to` is non-null for `result` and `error` types
