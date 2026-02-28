@@ -297,6 +297,23 @@ AEE is experimental and open for feedback. If you're building agent systems and 
 
 **Philosophy:** Keep the envelope stable and minimal. Let communities standardize meaning through intent schemas.
 
+## Related Protocols
+
+AEE is part of the **Quox protocol family** — three complementary specs that together provide messaging, control, and evidence for agentic systems:
+
+| Protocol | Role | Repo |
+|----------|------|------|
+| **AEE** | Envelope format + causality | *(this repo)* |
+| **AOCL** | Orchestration control layers (policy, routing, HITL gates) | [AOCL](https://github.com/AdaminX/AOCL-Agent-Orchestration-Control-Layers-Protocol) |
+| **VOLT** | Verifiable evidence ledger + tamper-evident traces | [VOLT](https://github.com/AdaminX/VOLT-Protocol) |
+
+**How they connect:**
+- AEE envelopes carry `corr` and `reply_to` — AOCL uses these for layer-level audit, VOLT uses them as `correlation_id` for evidence chains.
+- AOCL emits `aocl.*` intents as AEE envelopes — no AEE spec changes needed.
+- VOLT records AEE envelope events (`aee.envelope.received`, `aee.envelope.sent`) as part of its tamper-evident trace.
+
+Each protocol is independently useful. Together they provide **observable, controllable, provable** agent operations.
+
 ## License
 
 See [LICENSE](LICENSE) for details.
