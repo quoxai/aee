@@ -303,20 +303,22 @@ AEE is experimental and open for feedback. If you're building agent systems and 
 
 ## Related Protocols
 
-AEE is part of the **Quox protocol family** — three complementary specs that together provide messaging, control, and evidence for agentic systems:
+AEE is part of the **Quox protocol family** — four complementary specs that together provide messaging, control, evidence, and witnessing for agentic systems:
 
 | Protocol | Role | Repo |
 |----------|------|------|
 | **AEE** | Envelope format + causality | *(this repo)* |
 | **AOCL** | Orchestration control layers (policy, routing, HITL gates) | [AOCL](https://github.com/quoxai/aocl) |
 | **VOLT** | Verifiable evidence ledger + tamper-evident traces | [VOLT](https://github.com/quoxai/volt) |
+| **WARD** | Content-free hash-chain witnessing + external anchoring | [WARD](https://github.com/quoxai/ward) |
 
 **How they connect:**
 - AEE envelopes carry `corr` and `reply_to` — AOCL uses these for layer-level audit, VOLT uses them as `correlation_id` for evidence chains.
 - AOCL emits `aocl.*` intents as AEE envelopes — no AEE spec changes needed.
 - VOLT records AEE envelope events (`aee.envelope.received`, `aee.envelope.sent`) as part of its tamper-evident trace.
+- WARD witnesses AEE envelopes by ID and payload hash — producing content-free receipts without storing envelope content. WARD failures never affect AEE transport.
 
-Each protocol is independently useful. Together they provide **observable, controllable, provable** agent operations.
+Each protocol is independently useful. Together they provide **observable, controllable, provable, witnessed** agent operations.
 
 ## License
 
