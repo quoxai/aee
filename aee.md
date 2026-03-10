@@ -64,12 +64,18 @@ A small "contract" for execution. Common keys:
 - `evidence` *(boolean)* — whether proof/artifacts must be returned
 - `format` *(string)* — e.g. `"table"`, `"json"`, `"markdown"`
 - `min_confidence` *(number 0..1)*
+- `decision_evidence` *(string)* — level of structured decision evidence to include in the response. One of `"none" | "minimal" | "standard" | "full"`. See [Section 13](#13-decision-evidence).
 
 Agents MAY ignore unknown keys. Producers SHOULD keep this compact.
 
 **Example:**
 ```json
 {"timeout_ms": 30000, "evidence": true, "human_approval": false}
+```
+
+**Example with decision evidence:**
+```json
+{"timeout_ms": 30000, "decision_evidence": "standard"}
 ```
 
 ### 2.4 Entity Identifiers (`from`, `to`)
@@ -400,3 +406,84 @@ To retrieve the full envelope, use `aee.context.fetch` with the reference.
 ### Exception: Archival/Forensic Snapshots
 
 When creating immutable audit logs or forensic snapshots, embedding full envelopes as **inert blobs** in a `result` payload is acceptable. These are not active routing—they are historical records.
+
+---
+
+## 13) Decision Evidence
+
+Decision evidence is a structured, compact record of **why** an agent made a decision, what inputs it considered, and what action it took. It is designed for auditability without token bloat.
+
+### 13.1 Motivation
+
+Regulated industries and enterprise governance require that AI agent decisions are explainable and auditable. Raw conversation logs are insufficient — they are verbose, unstructured, and difficult to query. Decision evidence provides a standardised, machine-readable block that can be stored, searched, and presented to auditors.
+
+### 13.2 The `requires.decision_evidence` Contract
+
+When a `task` envelope includes `requires.decision_evidence`, the responding agent SHOULD include a `decision_evidence` object in the `result` payload.
+
+**Levels:**
+
+| Level | What the agent includes |
+|-------|------------------------|
+| `"none"` | No decision evidence (default if omitted) |
+| `"minimal"` | `decision` and `reason_summary` only |
+| `"standard"` | All fields except `context_refs` |
+| `"full"` | All fields, including `context_refs` with source locators |
+
+### 13.3 Decision Evidence Schema
+
+The decision evidence object is defined as a reusable schema fragment at [`schemas/decision-evidence.schema.json`](schemas/decision-evidence.schema.json).
+
+**Fields:**
+
+| Field | Type | Required at Level | Description |
+|-------|------|-------------------|-------------|
+| `inputs_used` | `string[]` | standard | Names/identifiers of inputs the agent considered |
+| `context_refs` | `string[]` | full | Locators or IDs of referenced context (envelopes, documents, tools) |
+| `tools_used` | `string[]` | standard | Tool names invoked during decision-making |
+| `decision` | `string` | minimal | The decision reached (concise statement) |
+| `reason_summary` | `string` | minimal | Why this decision was made (1-3 sentences) |
+| `action_taken` | `string` | standard | What the agent did as a result |
+| `confidence` | `number (0..1)` | standard | Agent's self-assessed confidence |
+
+### 13.4 Payload Placement
+
+Decision evidence lives in `payload.decision_evidence`:
+
+```json
+{
+  "v": "1",
+  "type": "result",
+  "intent": "ops.backup.status.check",
+  "requires": {"decision_evidence": "standard"},
+  "payload": {
+    "status": "PARTIAL_FAILURE",
+    "failed": [{"node": "pve02", "reason": "connection_refused:8007"}],
+    "decision_evidence": {
+      "inputs_used": ["pbs01 job log", "pve02 health check"],
+      "tools_used": ["ssh.exec", "pbs.job.list"],
+      "decision": "Classified as PARTIAL_FAILURE due to 1/3 nodes unreachable",
+      "reason_summary": "pve02 refused connection on port 8007. pve01 and pve03 completed successfully. Threshold for FAILURE is 2+ nodes.",
+      "action_taken": "Returned status with failed node details for operator review",
+      "confidence": 0.92
+    }
+  }
+}
+```
+
+### 13.5 Interaction with VOLT
+
+When decision evidence is present in a `result` envelope, VOLT-aware systems SHOULD:
+1. Include the `decision_evidence` object in the VOLT event payload
+2. The evidence becomes part of the cryptographically chained audit trail
+3. WARD witnesses the VOLT entry, providing tamper-evident proof the evidence existed at a point in time
+
+This creates a three-layer trust chain: **AEE** (structured evidence) → **VOLT** (tamper-evident log) → **WARD** (content-free witness receipt).
+
+### 13.6 Guidelines
+
+- Decision evidence is **descriptive, not prescriptive**. It records what happened, not what should happen.
+- Agents SHOULD use references (IDs, locators) rather than embedding full content in `context_refs`.
+- The `confidence` field is the agent's self-assessment. It is not validated by the protocol.
+- Producers SHOULD NOT include decision evidence for trivial operations (pings, health checks) unless explicitly requested.
+- Decision evidence does NOT replace `evidence_refs` in payloads. `evidence_refs` points to artifacts; `decision_evidence` explains reasoning.

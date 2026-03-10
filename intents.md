@@ -237,6 +237,47 @@ Validate a payload against an intent schema.
 
 ---
 
+---
+
+## Extension Namespace (`aee.ext.*`)
+
+The `aee.ext.*` namespace is for **optional protocol extensions** that enhance AEE capabilities without modifying the core envelope. Extensions are documented here for interoperability but are not required for AEE compliance.
+
+### aee.ext.decision_evidence
+
+Structured decision evidence capture. When `requires.decision_evidence` is set on a `task` envelope, the responding agent includes a `decision_evidence` object in the `result` payload.
+
+See [AEE spec Section 13](aee.md#13-decision-evidence) for the full specification.
+
+**Schema:** [`schemas/decision-evidence.schema.json`](schemas/decision-evidence.schema.json)
+
+**Levels:** `"none"` | `"minimal"` | `"standard"` | `"full"`
+
+**Usage in `requires`:**
+```json
+{"decision_evidence": "standard"}
+```
+
+**Result payload includes:**
+```json
+{
+  "payload": {
+    "decision_evidence": {
+      "inputs_used": ["fleet health data", "last backup log"],
+      "tools_used": ["ssh.exec"],
+      "decision": "Escalated to human operator",
+      "reason_summary": "Backup failure on 2 of 3 nodes exceeds auto-recovery threshold",
+      "action_taken": "Created approval request for manual intervention",
+      "confidence": 0.88
+    }
+  }
+}
+```
+
+**Integration:** Decision evidence objects are captured by VOLT (tamper-evident chain) and witnessed by WARD (content-free receipts), creating a three-layer trust chain.
+
+---
+
 ## Application Intents
 
 These intents are:

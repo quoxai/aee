@@ -1,29 +1,22 @@
-<!-- Last verified: 2026-03-06 by /codebase-mirror -->
+<!-- Last verified: 2026-03-10 by /codebase-mirror -->
 
 # AEE (Agent Envelope Exchange) — Codebase Map
 
 ## Metrics
 | Metric | Count |
 |--------|-------|
-| Spec Files | 7 markdown |
-| IETF Status | Submitted (draft-cowles-aee-00) |
-| Envelope Fields | 14 (10 required, 4 optional) |
-| Message Types | 5 |
+| Files | 12 |
+| Schema Files | 1 |
+| IETF Draft | Yes (draft-cowles-aee-00) |
 
-## Key Specs
-- **Format:** 14-field JSON envelope
-- **Fields:** v, id, ts, type, from, to, intent, corr, priority, payload + reply_to, trace, requires, sig
-- **Types:** task, result, event, error, stream
-- **Causality:** corr (shared conversation), reply_to (direct lineage)
-- **Reserved intents:** aee.status.ping, aee.capability.list, aee.context.fetch
-
-## Files
+## Key Files
 | File | Purpose |
 |------|---------|
-| README.md | Protocol overview |
-| aee.md | Full specification |
-| intents.md | Intent registry |
-| quickstart.md | Getting started |
-| relationship-to-mcp-acp.md | Protocol positioning |
-| examples/handshake.md | Agent discovery |
-| AI_README.json | Self-referential AEE envelope |
+| README.md | Specification overview |
+| aee.md | Protocol spec (14-field JSON envelope) |
+| intents.md | Starter intent registry |
+| quickstart.md | 5-minute quickstart |
+| relationship-to-mcp-acp.md | MCP/ACP relationship |
+
+## Status
+Protocol v1 (experimental) — IETF submitted 2026-02-28 (#160322) — MIT
