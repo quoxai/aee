@@ -1,4 +1,4 @@
-<!-- Last verified: 2026-03-10 by /codebase-mirror -->
+<!-- Last verified: 2026-03-14 by /codebase-mirror -->
 
 # AEE (Agent Envelope Exchange) — Codebase Map
 
