@@ -1,22 +1,25 @@
-<!-- Last verified: 2026-03-14 by /codebase-mirror -->
+<!-- Last verified: 2026-03-21 by /codebase-mirror -->
 
 # AEE (Agent Envelope Exchange) — Codebase Map
 
 ## Metrics
+
 | Metric | Count |
 |--------|-------|
-| Files | 12 |
-| Schema Files | 1 |
-| IETF Draft | Yes (draft-cowles-aee-00) |
+| Spec files | 3 (aee.md, intents.md, quickstart.md) |
+| Schemas | 1 (decision-evidence.schema.json) |
+| Supporting docs | 4 (relationship-to-mcp-acp.md, examples/, CHANGELOG, README) |
+| GitHub templates | 3 (bug, feature, PR template) |
+
+## Summary
+
+AEE defines the ULID-based message envelope protocol for agent communication. Envelopes carry `from`, `to`, `intent`, `corr` (conversation), and `reply_to` fields for causality chains.
 
 ## Key Files
-| File | Purpose |
-|------|---------|
-| README.md | Specification overview |
-| aee.md | Protocol spec (14-field JSON envelope) |
-| intents.md | Starter intent registry |
-| quickstart.md | 5-minute quickstart |
-| relationship-to-mcp-acp.md | MCP/ACP relationship |
 
-## Status
-Protocol v1 (experimental) — IETF submitted 2026-02-28 (#160322) — MIT
+- aee.md — Full specification
+- intents.md — Intent taxonomy
+- quickstart.md — Getting started guide
+- schemas/decision-evidence.schema.json — Decision evidence JSON schema
+- relationship-to-mcp-acp.md — Comparison with MCP/ACP protocols
+- AI_README.json — Machine-readable project summary
